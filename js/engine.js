@@ -6,21 +6,30 @@
    ===================================================== */
 
 const stage = document.getElementById('stage');
-const dotsWrap = document.getElementById('progress-dots');
+const chapterLabel = document.getElementById('progress-dots');
 
-let sequence = [];      // ordered list of entry ids to render/track for progress
-let current = 0;
+const CHAPTER_LABELS = {
+  'opening': 'The North Star',
+  'quote': null,
+  'journal-intro': 'On Journals',
+  'princess-intro': 'The Princess',
+  'map': 'The Map',
+  'kingdom-night': 'Kingdom of Endless Night',
+  'kingdom-stories': 'Hall of Stories',
+  'kingdom-tomorrow': 'City Beyond Tomorrow',
+  'kingdom-rain': 'Garden of Rain',
+  'kingdom-lake': 'Lake Above the Clouds',
+  'observatory': 'Twenty Stars',
+  'letter': 'The Final Letter',
+  'ending': null
+};
+
 let visitedKingdoms = new Set();
 
 function el(html) {
   const t = document.createElement('template');
   t.innerHTML = html.trim();
   return t.content.firstElementChild;
-}
-
-function mountEntry(node) {
-  stage.appendChild(node);
-  requestAnimationFrame(() => node.classList.add('active'));
 }
 
 function goTo(id) {
@@ -37,19 +46,17 @@ function goTo(id) {
     inner.style.animation = '';
   }
   window.scrollTo(0, 0);
-  updateDots(id);
+  updateChapterLabel(id);
 }
 
-function updateDots(activeId) {
-  dotsWrap.querySelectorAll('span').forEach(d => {
-    d.classList.toggle('on', d.dataset.id === activeId);
-  });
-}
-
-function addDot(id) {
-  const d = document.createElement('span');
-  d.dataset.id = id;
-  dotsWrap.appendChild(d);
+function updateChapterLabel(activeId) {
+  const label = CHAPTER_LABELS[activeId];
+  if (label) {
+    chapterLabel.textContent = label;
+    chapterLabel.classList.add('visible');
+  } else {
+    chapterLabel.classList.remove('visible');
+  }
 }
 
 /* ---------- art resolver: real image if present, else hand-coded SVG ---------- */
@@ -83,7 +90,6 @@ function simpleEntry({ id, bg = 'parchment-bg', eyebrow, title, body, marginNote
     node.querySelector('.continue-btn').addEventListener('click', () => goTo(nextId));
   }
   stage.appendChild(node);
-  addDot(id);
   return node;
 }
 
@@ -91,7 +97,7 @@ function simpleEntry({ id, bg = 'parchment-bg', eyebrow, title, body, marginNote
 function buildOpening() {
   simpleEntry({
     id: 'opening',
-    bg: 'night-bg opening',
+    bg: 'parchment-photo opening',
     eyebrow: 'Explorer\u2019s Field Journal',
     title: 'The North Star',
     princess: '',
@@ -132,16 +138,19 @@ function buildMap() {
         <span class="eyebrow">The Map</span>
         <h2>Choose where to begin</h2>
         <div class="divider"></div>
-        <svg id="map-svg" viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg">
-          <rect x="4" y="4" width="592" height="332" rx="6" fill="none" stroke="#8B6B3D" stroke-width="1.5" stroke-dasharray="2 4"/>
-          ${KINGDOMS.map(k => `
-            <g class="kingdom-hotspot" data-kingdom="${k.id}" tabindex="0" role="button" aria-label="${k.name}">
-              <circle class="hotspot-glow" cx="${k.hotspot.x}" cy="${k.hotspot.y}" r="26" fill="${k.accent}"/>
-              <circle cx="${k.hotspot.x}" cy="${k.hotspot.y}" r="7" fill="${k.accent}" stroke="#3A2B1E" stroke-width="1"/>
-              <text x="${k.hotspot.x}" y="${k.hotspot.y - 16}" text-anchor="middle">${k.name}</text>
-            </g>
-          `).join('')}
-        </svg>
+        <div id="map-frame">
+          <svg id="map-svg" viewBox="0 0 675 475" xmlns="http://www.w3.org/2000/svg">
+            <image href="assets/kingdom-map.jpg" x="0" y="0" width="675" height="475" preserveAspectRatio="xMidYMid slice"/>
+            ${KINGDOMS.map(k => `
+              <g class="kingdom-hotspot" data-kingdom="${k.id}" tabindex="0" role="button" aria-label="${k.name}">
+                <circle class="hotspot-glow" cx="${k.hotspot.x}" cy="${k.hotspot.y}" r="22" fill="${k.accent}"/>
+                <circle class="hotspot-ring" cx="${k.hotspot.x}" cy="${k.hotspot.y}" r="10" fill="none" stroke="${k.accent}" stroke-width="1.5"/>
+                <circle cx="${k.hotspot.x}" cy="${k.hotspot.y}" r="5" fill="${k.accent}" stroke="#241a10" stroke-width="1"/>
+                <text x="${k.hotspot.x}" y="${k.hotspot.y - 18}" text-anchor="middle">${k.name}</text>
+              </g>
+            `).join('')}
+          </svg>
+        </div>
         <p class="narrator" style="margin-top:1rem;">Every kingdom holds one part of the story. Visit them in any order.</p>
         <div id="map-continue" style="display:none;">
           <button class="continue-btn" data-next="observatory">All five visited — continue</button>
@@ -155,7 +164,6 @@ function buildMap() {
     g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openIt(); } });
   });
   stage.appendChild(node);
-  addDot('map');
 }
 
 function checkMapComplete() {
@@ -170,7 +178,17 @@ function checkMapComplete() {
 
 function openKingdom(id) {
   const existing = document.getElementById('kingdom-' + id);
-  if (existing) { goTo('kingdom-' + id); return; }
+  if (existing) {
+    if (!existing.querySelector('.revisit-note')) {
+      const note = document.createElement('div');
+      note.className = 'revisit-note';
+      note.textContent = 'You\u2019ve wandered back here before.';
+      const btnWrap = existing.querySelector('.continue-btn').parentElement;
+      btnWrap.parentElement.insertBefore(note, btnWrap);
+    }
+    goTo('kingdom-' + id);
+    return;
+  }
 
   const k = KINGDOMS.find(x => x.id === id);
   const layouts = {
@@ -183,7 +201,6 @@ function openKingdom(id) {
   const node = layouts[k.id](k);
   node.querySelector('.continue-btn').addEventListener('click', () => goTo('map'));
   stage.appendChild(node);
-  addDot('kingdom-' + id);
   visitedKingdoms.add(id);
   goTo('kingdom-' + id);
   checkMapComplete();
@@ -311,7 +328,6 @@ function buildObservatory() {
     </section>
   `);
   stage.appendChild(node);
-  addDot('observatory');
 
   let lit = 0;
   const textBox = node.querySelector('#star-text-box');
@@ -345,9 +361,12 @@ function buildObservatory() {
 function buildClosing() {
   simpleEntry({
     id: 'letter',
-    bg: 'parchment-bg letter-entry',
+    bg: 'parchment-photo letter-entry',
     eyebrow: 'The Final Letter',
-    body: FINAL_LETTER.split('\n\n').map(p => p.trim()).join('</p><p class="narrator">'),
+    body: FINAL_LETTER
+      .split('\n\n')
+      .map(p => p.trim().split('\n').join('<br>'))
+      .join('</p><p class="narrator">'),
     nextId: 'ending'
   });
 
@@ -359,7 +378,6 @@ function buildClosing() {
     </section>
   `);
   stage.appendChild(endNode);
-  addDot('ending');
 }
 
 /* ---------- build everything ---------- */

@@ -82,6 +82,18 @@ body { min-height: 100vh; min-height: 100dvh; }
   color: var(--parchment);
 }
 
+.entry.parchment-photo {
+  background-image:
+    linear-gradient(rgba(239,230,211,0.08), rgba(239,230,211,0.08)),
+    url("../assets/parchment-page.jpg");
+  background-size: cover;
+  background-position: center;
+  color: var(--ink);
+}
+.parchment-photo p.narrator { color: var(--ink-soft); }
+.parchment-photo .continue-btn { border-color: var(--ink); color: var(--ink); }
+.parchment-photo .continue-btn:hover { background: var(--ink); color: var(--parchment); }
+
 .entry-inner {
   max-width: 100%;
   width: 100%;
@@ -158,11 +170,35 @@ p.narrator {
 
 /* ---------- Map ---------- */
 .map-entry .entry-inner { max-width: 640px; }
-#map-svg { width: 100%; height: auto; max-height: 50vh; }
+#map-frame {
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  border: 1px solid rgba(139,107,61,0.4);
+}
+#map-svg { width: 100%; height: auto; display: block; }
 .kingdom-hotspot { cursor: pointer; transition: opacity 0.3s; }
 .kingdom-hotspot:hover .hotspot-glow, .kingdom-hotspot:focus .hotspot-glow { opacity: 0.9; }
-.kingdom-hotspot text { font-family: var(--hand); fill: var(--ink); font-size: 15px; }
-.hotspot-glow { opacity: 0.35; transition: opacity 0.3s; }
+.kingdom-hotspot text {
+  font-family: var(--hand);
+  fill: #2A1D12;
+  font-size: 16px;
+  paint-order: stroke;
+  stroke: rgba(239,230,211,0.9);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.hotspot-glow { opacity: 0.45; transition: opacity 0.3s; }
+.hotspot-ring { opacity: 0.7; }
+
+.revisit-note {
+  font-family: var(--hand);
+  font-size: 1.1rem;
+  color: var(--k-accent, var(--bronze));
+  opacity: 0.75;
+  margin-top: -0.4rem;
+  margin-bottom: 0.6rem;
+}
 
 /* ---------- Kingdom shared bits ---------- */
 .kingdom-entry .eyebrow { color: var(--k-accent); }
@@ -318,10 +354,20 @@ p.narrator {
 #progress-dots {
   position: fixed; bottom: max(16px, env(safe-area-inset-bottom));
   left: 50%; transform: translateX(-50%);
-  display: flex; gap: 6px; z-index: 45;
+  z-index: 45;
+  font-family: var(--hand);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--parchment);
+  background: rgba(28,20,13,0.55);
+  padding: 5px 16px;
+  border-radius: 20px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
 }
-#progress-dots span { width: 5px; height: 5px; border-radius: 50%; background: rgba(139,107,61,0.35); }
-#progress-dots span.on { background: var(--bronze); }
+#progress-dots.visible { opacity: 1; }
 
 /* ---------- Desktop enhancements ---------- */
 @media (min-width: 760px) {
